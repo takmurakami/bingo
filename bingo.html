@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>イベント用ビンゴマシーン</title>
+
+<style>
+body{
+    font-family:sans-serif;
+    text-align:center;
+    background:#111;
+    color:white;
+}
+
+h1{
+    font-size:48px;
+}
+
+#result{
+    font-size:120px;
+    margin:40px;
+    font-weight:bold;
+    transition:transform 0.3s;
+}
+
+.big{
+    transform:scale(1.4);
+}
+
+button{
+    font-size:24px;
+    padding:12px 40px;
+    margin:10px;
+    cursor:pointer;
+}
+
+#history{
+    margin-top:40px;
+    font-size:24px;
+}
+
+.historyItem{
+    display:inline-block;
+    margin:6px;
+    padding:8px 14px;
+    background:#333;
+    border-radius:6px;
+}
+</style>
+
+</head>
+<body>
+
+<h1>🎰 ビンゴマシーン</h1>
+
+<div id="result">---</div>
+
+<button onclick="draw()">抽選</button>
+
+<h2>出た番号</h2>
+<div id="history"></div>
+
+<script>
+
+const bingoList = [
+"C-1","C-2","C-3","C-4","C-5","C-6","C-7","C-8",
+"G-1","G-2","G-3","G-4"
+];
+
+let remaining = [...bingoList];
+let spinning = false;
+
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playSpinSound(){
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.frequency.value = 600;
+    gain.gain.value = 0.05;
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.05);
+}
+
+function playWinSound(){
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.frequency.setValueAtTime(400,audioCtx.currentTime);
+    osc.frequency.linearRampToValueAtTime(900,audioCtx.currentTime+0.3);
+
+    gain.gain.value = 0.1;
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.3);
+}
+
+function draw(){
+
+    if(spinning) return;
+
+    if(remaining.length===0){
+        document.getElementById("result").textContent="終了";
+        return;
+    }
+
+    spinning=true;
+
+    const result=document.getElementById("result");
+
+    let count=0;
+
+    const animation=setInterval(()=>{
+
+        playSpinSound();
+
+        const random=bingoList[Math.floor(Math.random()*bingoList.length)];
+        result.textContent=random;
+
+        count++;
+
+        if(count>25){
+
+            clearInterval(animation);
+
+            const index=Math.floor(Math.random()*remaining.length);
+            const final=remaining.splice(index,1)[0];
+
+            result.textContent=final;
+
+            result.classList.add("big");
+
+            playWinSound();
+
+            addHistory(final);
+
+            setTimeout(()=>{
+                result.classList.remove("big");
+                spinning=false;
+            },600);
+
+        }
+
+    },70);
+
+}
+
+function addHistory(value){
+
+    const history=document.getElementById("history");
+
+    const item=document.createElement("span");
+    item.className="historyItem";
+    item.textContent=value;
+
+    history.appendChild(item);
+
+}
+
+</script>
+
+</body>
+</html>
